@@ -1,0 +1,41 @@
+name: YearProgressBot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 12 */3 * *'
+    - cron: '54 23 31 12 *'
+    - cron: '0 0 1 1 *'
+    
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+# check if github perms are working as expected
+
+    steps:
+       - name: Checkouts
+         uses: actions/checkout@v3
+
+       - name: Run Bot
+         run: |
+              source config.txt
+              export GIT_EMAIL="${{ secrets.GIT_EMAIL }}"
+              export TG_TOKEN="${{ secrets.TG_TOKEN }}"
+              export GIT_TOKEN=${{secrets.GITHUB_TOKEN}}
+              export GIT_USERNAME="${{ secrets.GIT_USERNAME }}"
+              if [[ "${TG_TOKEN}" == "" ]]; then echo 'TG Token not set, Exiting...' && exit 1 ; fi
+              if [[ "${GIT_TOKEN}" == "" ]]; then echo 'GIT Token not set, Exiting...' && exit 1 ; fi
+              if [[ "${GIT_USERNAME}" == "" ]]; then echo 'GIT Username not set, Exiting...' && exit 1 ; fi
+              if [[ "${GIT_EMAIL}" == "" ]]; then echo 'GIT Email not set, Exiting...' && exit 1 ; fi
+              export GIT_NAME_AND_REPONAME=$(git config --get remote.origin.url | sed 's/.*\/\([^ ]*\/[^.]*\).*/\1/')
+              export GITHUB_USERNAME=$(echo "${GIT_NAME_AND_REPONAME}" | sed 's/\/.*//')
+              echo $GIT_NAME_AND_REPONAME
+              git config --global user.email "${GIT_EMAIL}"
+              git config --global user.name "${GIT_USERNAME}"
+              bash bot.sh
